@@ -60,6 +60,7 @@ async def on_message(message: discord.Message):
                 await remCred(message)
             return
         case '!mystats':
+            await myStats(message)
             return
 
 # An event handler for when new people join the HvZ Discord Server
@@ -76,7 +77,7 @@ async def on_disconnect():
 async def addKill(message: discord.Message):
     killed = message.mentions
     if killed is None:
-        message.channel.send("Usage is '!addkill @player1 @player2 ....")
+        await message.channel.send("Usage is '!addkill @player1 @player2 ....")
     
     if message.author in killed:
         await message.author.send("WARNING: You cannot kill yourself.")
@@ -123,12 +124,59 @@ async def addKill(message: discord.Message):
 
 # Command that players can call when they've killed another player
 async def addCred(message: discord.Message):
-    print("!addcred to be implemented")
+    credited = message.mentions
+    credrole = message.role_mentions
+    if credited is None:
+        await message.channel.send("Usage is '!addcred @player1 @player2 ....")
+    
+    # If the killer was a zombie
+    for role in credrole:
+        for x in role.members:
+            await x.send("You received one (1) credit from your team's spoils! Spend it wisely...")
+            if x.name in df['name'].values:
+                lst = df.index[df['name'] == x.name].tolist()
+                index = lst[0]
+                df.at[index, 'credits'] += 1
+            else:
+                df.loc[len(df.index)] = [x.name, 0, 1]
+
+    # If the killer was a zombie
+    for x in credited:
+        await  x.send("You received one (1) credit! Spend it wisely...")
+        if x.name in df['name'].values:
+            lst = df.index[df['name'] == x.name].tolist()
+            index = lst[0]
+            df.at[index, 'credits'] += 1
+        else:
+            df.loc[len(df.index)] = [x.name, 0, 1]
+    df.to_csv("data.csv") 
     return
 
                     
 async def remCred(message: discord.Message):
-    print("!remcred to be implemented")
+    credited = message.mentions
+    if credited is None:
+        await message.channel.send("Usage is '!remcred @player x")
+
+    fields = message.content.split()
+    spent = int(fields[2])
+    name = credited[0].name
+    if name in df['name'].values:
+        lst = df.index[df['name'] == name].tolist()
+        index = lst[0]
+        df.at[index, 'credits'] -= spent
+    else:
+        df.loc[len(df.index)] = [name, 0, -1]
+    df.to_csv("data.csv") 
+    return
+
+async def myStats(message: discord.Message):
+    if message.author.name in df['name'].values:
+        lst = df.index[df['name'] == message.author.name].tolist()
+        index = lst[0]
+        await message.author.send(f"You have:\n{df.at[index, 'kills']} kill(s)\n{df.at[index, 'credits']} credit(s)")
+    else:
+        await message.author.send(f"You have:\n0 kills\n0 credits")
     return
 
 intents = discord.Intents.default()
