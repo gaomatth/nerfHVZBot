@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 
 import pandas as pd
-import numpy as np
 from os.path import exists
 
 if not exists("data.csv"):
@@ -30,8 +29,8 @@ async def on_ready():
 @bot.event
 async def on_message(message: discord.Message):
     # don't respond to ourselves
-    """ if message.channel.name != "general":
-        return """
+    if message.guild is None:
+        return 
     if message.author == bot.user:
         return
 
@@ -42,12 +41,24 @@ async def on_message(message: discord.Message):
         case '!dispute':
             admins = discord.utils.get(message.guild.roles, name = admin_role).members
             for admin in admins:
-                admin.send(f"Player {message.author.name} has disputed an action by another player. Contact {message.author.name} for more information")
+                await admin.send(f"Player {message.author.name} has disputed an action by another player. Contact {message.author.name} for more information")
             return
         case '!usrhelp':
-            message.author.send(f"Hello!\nThe following commands are available through the #general chat:\n!addkill @user1 @user2 ...\tThis command reports ")
+            await message.author.send(f"Hello!\nThe following commands are available through server chats:\n\n!addkill @user1 @user2 ...\nThis command reports kills you have made in the game and updates your stats\n\n!dispute\nThis command reports to mods that you want to dispute your status in the game (e.g. you were reported killed but you weren't, etc.)\n\n!usrhelp\nThis command tells you what commands are available. If you're not sure, you can always ask.\n\n!mystats\nThis command will print out your kills and your current credits.")
             return
-        case '!addCred':
+        case '!addcred':
+            if discord.utils.get(message.author.roles, name = admin_role) is None:
+                return
+            else:
+                await addCred(message)
+            return
+        case '!remcred':
+            if discord.utils.get(message.author.roles, name = admin_role) is None:
+                return
+            else:
+                await remCred(message)
+            return
+        case '!mystats':
             return
 
 # An event handler for when new people join the HvZ Discord Server
@@ -66,14 +77,17 @@ async def addKill(message: discord.Message):
     if killed is None:
         message.channel.send("Usage is '!addkill @player1 @player2 ....")
     
+    if message.author in killed:
+        await message.author.send("WARNING: You cannot kill yourself.")
+        return
+
     if message.author.name in df['name'].values:
         lst = df.index[df['name'] == message.author.name].tolist()
         index = lst[0]
-        df[index, 'kills'] += len(killed)
+        df.at[index, 'kills'] += len(killed)
     else:
-        temp = {'name': message.author.name, 'La': 'Aruchamy', 'Country': 'India'}
-        
-        
+        df.loc[len(df.index)] = [message.author.name, len(killed), 0]
+
     # If the killer was a zombie
     if discord.utils.get(message.author.roles, name = infector_role) is not None:
         for x in killed:
@@ -104,6 +118,16 @@ async def addKill(message: discord.Message):
                 if discord.utils.get(x.roles, name = team2_role) is None:
                     await x.send(f"Oh no! {message.author.name} from Team {team2_role} killed you! \nContact a mod if you have a question. If you want to dispute this, use !dispute.")
                     return
+
+# Command that players can call when they've killed another player
+async def addCred(message: discord.Message):
+    print("!addcred to be implemented")
+    return
+
+                    
+async def remCred(message: discord.Message):
+    print("!remcred to be implemented")
+    return
 
 intents = discord.Intents.default()
 bot.run('OTY3ODY4NjQ4NzEyNzIwMzk0.YmWj6w.lMTKMFzaT9ItHTCWiWJFEOvm_wI')
