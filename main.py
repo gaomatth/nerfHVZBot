@@ -2,13 +2,14 @@ import discord
 from discord.ext import commands
 
 import pandas as pd
+import numpy as np
 from os.path import exists
 
 if not exists("data.csv"):
     df = pd.DataFrame(columns = ['name', 'kills', 'credits'])
     df.to_csv("data.csv")
 else: 
-    df = pd.read_csv("data.csv")
+    df = pd.read_csv("data.csv", index_col = [0])
 
 # Enable all intents to let the bot do anything we need it to
 intents = discord.Intents.all()
@@ -87,6 +88,7 @@ async def addKill(message: discord.Message):
         df.at[index, 'kills'] += len(killed)
     else:
         df.loc[len(df.index)] = [message.author.name, len(killed), 0]
+    df.to_csv("data.csv")
 
     # If the killer was a zombie
     if discord.utils.get(message.author.roles, name = infector_role) is not None:
