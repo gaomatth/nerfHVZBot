@@ -20,10 +20,10 @@ bot = discord.Client(intents = intents)
 
 
 # Server role names
-infector_role = 'cadmin'
-team1_role = 'badmin'
-team2_role = 'sadmin'
-admin_role = 'Admin'
+infector_role = 'Zombie'
+team1_role = 'Pirate'
+team2_role = 'Scientist'
+admin_role = 'MODERATOR'
 
 # Prints information to the terminal that the bot is running. 
 @bot.event
@@ -130,12 +130,12 @@ async def addKill(message: discord.Message):
             if discord.utils.get(message.author.roles, name = team1_role) is not None:
                 if discord.utils.get(x.roles, name = team1_role) is None:
                     df.at[index, 'kills'] += 1
-                    await x.send(f"Oh no! {message.author.name} from Team {team1_role} killed you! \nContact a mod if you have a question. If you want to dispute this, use !dispute.")
+                    await x.send(f"Oh no! {message.author.name} from {team1_role} killed you! \nContact a mod if you have a question. If you want to dispute this, use !dispute.")
                     
             if discord.utils.get(message.author.roles, name = team2_role) is not None:
                 if discord.utils.get(x.roles, name = team2_role) is None:
                     df.at[index, 'kills'] += 1
-                    await x.send(f"Oh no! {message.author.name} from Team {team2_role} killed you! \nContact a mod if you have a question. If you want to dispute this, use !dispute.")    
+                    await x.send(f"Oh no! {message.author.name} from {team2_role} killed you! \nContact a mod if you have a question. If you want to dispute this, use !dispute.")    
 
     df.to_csv("data.csv")
 
@@ -181,19 +181,29 @@ async def addCred(message: discord.Message):
 # NOTE: This function, unlike addCred, will take only one player and an amount that they spent. 
 async def remCred(message: discord.Message):
     credited = message.mentions
-    if not credited:
+    if not credited or len(credited) > 1:
         await message.channel.send("Usage is '!remcred @player x")
         return
 
     fields = message.content.split()
     spent = int(fields[2])
+
+    if spent <= 0:
+        await message.author.send("Spent amount should be a strictly positive, nonzero integer")
+        return
+    
     name = credited[0].name
     if name in df['name'].values:
         lst = df.index[df['name'] == name].tolist()
         index = lst[0]
-        df.at[index, 'credits'] -= spent
+        if df.at[index, 'credits'] >= spent:
+            df.at[index, 'credits'] -= spent
+        else:
+            await message.author.send("{name} does not have the credits to process this transaction")
+            return
     else:
-        df.loc[len(df.index)] = [name, 0, -1]
+        await message.author.send("{name} has no credits available for this transaction")
+        df.loc[len(df.index)] = [name, 0, 0]
     df.to_csv("data.csv") 
     return
 
@@ -208,4 +218,4 @@ async def myStats(message: discord.Message):
     return
 
 intents = discord.Intents.default()
-bot.run('OTY3ODY4NjQ4NzEyNzIwMzk0.YmWj6w.lMTKMFzaT9ItHTCWiWJFEOvm_wI')
+bot.run('OTY3ODY4NjQ4NzEyNzIwMzk0.YmWj6w.PtQxS-Qh3kETdnGH9BpA51dfdMI')
