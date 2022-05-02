@@ -77,6 +77,13 @@ async def on_message(message: discord.Message):
             # call mystats utility to view your kills and credits. 
             await myStats(message)
             return
+        case '!ozkills':
+            if discord.utils.get(message.author.roles, name = admin_role) is None:
+                await message.author.send("You do not have permission to call this command.")
+                return
+            else:
+                await ozKills(message)
+            return
 
 # An event handler for when new people join the HvZ Discord Server
 @bot.event
@@ -144,7 +151,6 @@ async def addCred(message: discord.Message):
     # Find who was mentioned and what role
     credited = message.mentions
     credrole = message.role_mentions
-    print(credrole)
     
     # nothing input
     if not credited and not credrole:
@@ -186,6 +192,9 @@ async def remCred(message: discord.Message):
         return
 
     fields = message.content.split()
+    if len(fields) != 3:
+        await message.channel.send("Usage is '!remcred @player x")
+        return
     spent = int(fields[2])
 
     if spent <= 0:
@@ -197,12 +206,13 @@ async def remCred(message: discord.Message):
         lst = df.index[df['name'] == name].tolist()
         index = lst[0]
         if df.at[index, 'credits'] >= spent:
+            await message.channel.send("Transaction complete!")
             df.at[index, 'credits'] -= spent
         else:
-            await message.author.send("{name} does not have the credits to process this transaction")
+            await message.author.send(f"{name} does not have the credits to process this transaction")
             return
     else:
-        await message.author.send("{name} has no credits available for this transaction")
+        await message.author.send(f"{name} has no credits available for this transaction")
         df.loc[len(df.index)] = [name, 0, 0]
     df.to_csv("data.csv") 
     return
@@ -217,9 +227,24 @@ async def myStats(message: discord.Message):
         await message.author.send(f"You have:\n0 kills\n0 credits")
     return
 
+async def ozKills(message: discord.Message):
+    # find killed list and check if it is empty
+    killed = message.mentions
+    if not killed:
+        await message.channel.send("Usage is '!ozkills @player1 @player2 ....")
+
+    for x in killed:
+        # message to tell victim they've been killed
+        await x.send(f"Oh no, you've been zombified by an OZ! \nContact a mod if you have a question. If you want to dispute this, use !dispute.")
+
+        # The chunk below should change the role of the victim to a zombie, and remove the other roles. 
+        added = discord.utils.get(message.guild.roles, name = infector_role)
+        removed1 = discord.utils.get(message.guild.roles, name = team1_role)
+        removed2 = discord.utils.get(message.guild.roles, name = team2_role)
+        await discord.Member.add_roles(x, added)
+        await discord.Member.remove_roles(x, *[removed1,removed2])
+
 intents = discord.Intents.default()
-<<<<<<< HEAD
-bot.run('OTY3ODY4NjQ4NzEyNzIwMzk0.YmWj6w.PtQxS-Qh3kETdnGH9BpA51dfdMI')
-=======
-bot.run("token")
->>>>>>> a9594e04f06a4f3879efaba3c225bc45ed4799cf
+
+
+bot.run("Token")
