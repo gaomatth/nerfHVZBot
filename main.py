@@ -218,4 +218,8 @@ async def myStats(message: discord.Message):
     return
 
 intents = discord.Intents.default()
+<<<<<<< HEAD
 bot.run('OTY3ODY4NjQ4NzEyNzIwMzk0.YmWj6w.PtQxS-Qh3kETdnGH9BpA51dfdMI')
+=======
+bot.run("token")
+>>>>>>> a9594e04f06a4f3879efaba3c225bc45ed4799cf
